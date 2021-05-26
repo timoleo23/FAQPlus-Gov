@@ -1436,7 +1436,22 @@ namespace Microsoft.Teams.Apps.FAQPlusPlus.Bots
 
                 if (queryResult.Answers.First().Id != -1)
                 {
-                    await turnContext.SendActivityAsync(MessageFactory.Attachment(ResponseCard.GetCard(queryResult.Answers.First(), text, this.appBaseUri, payload))).ConfigureAwait(false);
+                    var answerData = queryResult.Answers.First();
+                    AnswerModel answerModel = new AnswerModel();
+
+                    if (Validators.IsValidJSON(answerData.Answer))
+                    {
+                        answerModel = JsonConvert.DeserializeObject<AnswerModel>(answerData.Answer);
+                    }
+
+                    if (!string.IsNullOrEmpty(answerModel?.Title) || !string.IsNullOrEmpty(answerModel?.Subtitle) || !string.IsNullOrEmpty(answerModel?.ImageUrl) || !string.IsNullOrEmpty(answerModel?.RedirectionUrl))
+                    {
+                        await turnContext.SendActivityAsync(MessageFactory.Attachment(MessagingExtensionQnaCard.GetEndUserRichCard(text, answerData))).ConfigureAwait(false);
+                    }
+                    else
+                    {
+                        await turnContext.SendActivityAsync(MessageFactory.Attachment(ResponseCard.GetCard(answerData, text, this.appBaseUri, payload))).ConfigureAwait(false);
+                    }
                 }
                 else
                 {
